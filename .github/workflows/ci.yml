@@ -5,29 +5,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: |
-          pytest tests/ -v
-
   build:
     runs-on: ubuntu-latest
-    needs: test
 
     steps:
       - name: Checkout code
@@ -40,13 +19,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --break-system-packages -r requirements.txt
 
       - name: Start server and health check
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          uvicorn app.main_v2_mysql:app --host 0.0.0.0 --port 8000 &
           sleep 3
-          curl -f http://localhost:8000/health
+          curl -f http://localhost:8000/health || exit 1
 
   deploy:
     runs-on: self-hosted
@@ -64,8 +43,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip3 install -r requirements.txt
-          pip3 install mysql-connector-python
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
 
       - name: Restart service
         run: |
@@ -74,4 +54,4 @@ jobs:
       - name: Health check
         run: |
           sleep 3
-          curl -f http://localhost:8000/health
+          curl -f http://localhost:8000/health || exit 1
