@@ -23,7 +23,6 @@ jobs:
 
       - name: Run tests
         run: |
-          cd 04-project
           pytest tests/ -v
 
   build:
