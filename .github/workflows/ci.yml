@@ -1,78 +1,78 @@
-name: Student Portal CI/CD
+name: Student Portal CI/CD  # Name of the GitHub Actions workflow
 
 on:
   push:
-    branches: [main]
+    branches: [main]  # Run this workflow only when code is pushed to the main branch
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Use a self-hosted runner for the test job
 
     steps:
-      - name: Checkout code
+      - name: Checkout code  # Get the repository source code for the workflow
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python  # Prepare Python on the runner
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11"  # Install Python 3.11 for the workflow
 
-      - name: Install dependencies
+      - name: Install dependencies  # Install Python packages required by the project
         run: |
           pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run tests  # Execute the automated test suite
         run: |
           pytest tests/ -v
 
   build:
-    runs-on: ubuntu-latest
-    needs: test
+    runs-on: self-hosted  # Use a self-hosted runner for the build job
+    needs: test  # Run this job only after the test job succeeds
 
     steps:
-      - name: Checkout code
+      - name: Checkout code  # Retrieve repository files again in this job
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python  # Install Python environment for build validation
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install dependencies  # Install the same dependencies for build verification
         run: |
           pip install -r requirements.txt
 
-      - name: Start server and health check
+      - name: Start server and health check  # Start the application and verify it responds
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           sleep 3
           curl -f http://localhost:8000/health
 
   deploy:
-    runs-on: self-hosted
-    needs: build
+    runs-on: self-hosted  # Deploy on a self-hosted runner with access to the target environment
+    needs: build  # Deploy only after the build job passes
 
     env:
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_HOST: ${{ secrets.DB_HOST }}  # Database host secret injected into the job
+      DB_USER: ${{ secrets.DB_USER }}  # Database username secret
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}  # Database password secret
+      DB_NAME: ${{ secrets.DB_NAME }}  # Database name secret
 
     steps:
-      - name: Checkout code
+      - name: Checkout code  # Access repository files for deployment
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install dependencies  # Create a virtual environment and install Python requirements
         run: |
           python3 -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
 
-      - name: Restart service
+      - name: Restart service  # Restart the deployed application service on the target host
         run: |
           sudo /bin/systemctl restart student-portal
 
-      - name: Health check via Nginx
+      - name: Health check via Nginx  # Confirm the deployed service is reachable through Nginx
         run: |
           sleep 3
           curl -f http://localhost/health
