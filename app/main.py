@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from pathlib import Path
 import json
 import os
 
@@ -26,9 +28,10 @@ class Student(BaseModel):
     grade: str
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    return {"message": "Welcome to Student Portal"}
+    html_file = Path(__file__).with_name("landing_page.html")
+    return html_file.read_text(encoding="utf-8")
 
 
 @app.get("/health")

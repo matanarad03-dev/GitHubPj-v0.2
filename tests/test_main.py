@@ -21,7 +21,8 @@ client = TestClient(app)
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert "message" in response.json()
+    assert "text/html" in response.headers["content-type"]
+    assert "Student Portal" in response.text
 
 
 # --- Test 2: Health check ---
